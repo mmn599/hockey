@@ -52,6 +52,7 @@ def get_player_goals_scored_in_season(engine, playername):
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
 	goals = games['G'].as_matrix()
+	print(goals)
 	return goals.sum()
 	
 def get_player_goals_scored_in_past_games(engine, playername, game_number):
@@ -60,6 +61,7 @@ def get_player_goals_scored_in_past_games(engine, playername, game_number):
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
 	goals = games['G'].as_matrix()
 	goals = goals[0:game_number]
+	print(goals)
 	return goals.sum()
 	
 def get_player_short_handed_goals_scored_in_season(engine, playername):
@@ -67,6 +69,7 @@ def get_player_short_handed_goals_scored_in_season(engine, playername):
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
 	goals = games['SH'].as_matrix()
+	print(goals)
 	return goals.sum()
 	
 def get_player_short_handed_goals_scored_in_past_games(engine, playername, game_number):
@@ -75,6 +78,7 @@ def get_player_short_handed_goals_scored_in_past_games(engine, playername, game_
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
 	goals = games['SH'].as_matrix()
 	goals = goals[0:game_number]
+	print(goals)
 	return goals.sum()
 	
 def get_player_even_handed_goals_scored_in_season(engine, playername):
@@ -82,6 +86,7 @@ def get_player_even_handed_goals_scored_in_season(engine, playername):
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
 	goals = games['EV'].as_matrix()
+	print(goals)
 	return goals.sum()
 	
 def get_player_even_handed_goals_scored_in_past_games(engine, playername, game_number):
@@ -90,6 +95,7 @@ def get_player_even_handed_goals_scored_in_past_games(engine, playername, game_n
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
 	goals = games['EV'].as_matrix()
 	goals = goals[0:game_number]
+	print(goals)
 	return goals.sum()
 
 def get_player_power_play_goals_scored_in_season(engine, playername):
@@ -97,6 +103,7 @@ def get_player_power_play_goals_scored_in_season(engine, playername):
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
 	goals = games['PP'].as_matrix()
+	print(goals)
 	return goals.sum()
 	
 def get_player_power_play_goals_scored_in_past_games(engine, playername, game_number):
@@ -105,75 +112,84 @@ def get_player_power_play_goals_scored_in_past_games(engine, playername, game_nu
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
 	goals = games['PP'].as_matrix()
 	goals = goals[0:game_number]
+	print(goals)
 	return goals.sum()
 	
 def get_player_assists_in_season(engine, playername):
 	season_end = datetime.datetime(2016, 10, 12)
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
-	goals = games['A'].as_matrix()
-	return goals.sum()
+	assists = games['A'].as_matrix()
+	print(assists)
+	return assists.sum()
 	
 def get_player_assists_in_past_games(engine, playername, game_number):
 	season_end = datetime.datetime(2016, 10, 12)
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
-	goals = games['A'].as_matrix()
-	goals = goals[0:game_number]
-	return goals.sum()
+	assists = games['A'].as_matrix()
+	assists = assists[0:game_number]
+	print(assists)
+	return assists.sum()
 
 def get_player_plus_minus_in_season(engine, playername):
 	season_end = datetime.datetime(2016, 10, 12)
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
-	goals = games['+/-'].as_matrix()
-	return goals.sum()
+	plus_minus = games['+/-'].as_matrix()
+	print(plus_minus)
+	return plus_minus.sum()
 	
 def get_player_plus_minus_in_past_games(engine, playername, game_number):
 	season_end = datetime.datetime(2016, 10, 12)
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
 	print(games.columns.values)
-	goals = games['+/-'].as_matrix()
-	goals = goals[0:game_number]
-	return goals.sum()
+	plus_minus = games['+/-'].as_matrix()
+	plus_minus = plus_minus[0:game_number]
+	print(plus_minus)
+	return plus_minus.sum()
 
 def get_player_shots_in_season(engine, playername):
 	season_end = datetime.datetime(2016, 10, 12)
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
-	goals = games['S'].as_matrix()
-	return goals.sum()
+	shots = games['S'].as_matrix()
+	print(shots)
+	return shots.sum()
 	
 def get_player_shots_in_past_games(engine, playername, game_number):
 	season_end = datetime.datetime(2016, 10, 12)
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
 	print(games.columns.values)
-	goals = games['S'].as_matrix()
-	goals = goals[0:game_number]
-	return goals.sum()
+	shots = games['S'].as_matrix()
+	shots = shots[0:game_number]
+	print(shots)
+	return shots.sum()
 
 def get_player_shot_percentage_in_season(engine, playername):
 	season_end = datetime.datetime(2016, 10, 12)
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
-	goals = games['S'].as_matrix()
-	total_shots = goals.sum()
-	##MAKE SURE THAT THIS IS RETURNING THE NUMBER OF ROWS WITHOUT COUNTING THE HEADER
-	total_games = games.shape[0]
-	return total_shots / total_games
+	shots = games['S'].as_matrix()
+	total_shots = shots.sum()
+	goals = games['G'].as_matrix()
+	total_goals = goals.sum()
+	return (total_goals / total_shots) * 100
 	
 def get_player_shot_percentage_in_past_games(engine, playername, game_number):
 	season_end = datetime.datetime(2016, 10, 12)
 	season_start = datetime.datetime(2015, 10, 7)
 	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
 	print(games.columns.values)
-	goals = games['S'].as_matrix()
+	shots = games['S'].as_matrix()
+	shots = shots[0:game_number]
+	total_shots = shots.sum()
+	goals = games['G'].as_matrix()
 	goals = goals[0:game_number]
-	total_shots = goals.sum()
-	total_games = goals.shape[0]
-	return total_shots / total_games
+	total_goals = goals.sum()
+	return (total_goals / total_shots) * 100
 
 DB_NAME = "../test.db"
 
@@ -183,6 +199,6 @@ engine = get_engine(DB_NAME)
 date2 = datetime.datetime.now()
 #date way in the past
 date1 = datetime.datetime(2000, 12, 1)
-goals = get_player_plus_minus_in_past_games(engine, 'Mikael Backlund', 14)
-print(goals)
+result = get_player_shot_percentage_in_season(engine, 'Mikael Backlund')
+print(result)
 
