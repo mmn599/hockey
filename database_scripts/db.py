@@ -1,6 +1,7 @@
 import sqlalchemy
 import datetime
 import pandas as pd
+import numpy as np
 
 PLAYER_STATS_FILE = "PlayerStats"
 HOME = "Home"
@@ -190,15 +191,54 @@ def get_player_shot_percentage_in_past_games(engine, playername, game_number):
 	goals = goals[0:game_number]
 	total_goals = goals.sum()
 	return (total_goals / total_shots) * 100
+	
+def get_player_toi_in_season(engine, playername):
+	season_end = datetime.datetime(2016, 10, 12)
+	season_start = datetime.datetime(2015, 10, 7)
+	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
+	toi = games['TOI'].as_matrix()
+	total_toi_in_seconds = 0
+	for x in toi:
+		digits = x.split(":")
+		#in the highly unlikely event that the TOI is over an hour..
+		if (len(digits) == 3):
+			hours = digits[0]
+			minutes = digits[1]
+			seconds = digits[2]
+			total_toi_in_seconds = total_toi_in_seconds + (int(hours) * 60 * 60)
+		else:
+			minutes = digits[0]
+			seconds = digits[1]
+		total_toi_in_seconds = total_toi_in_seconds + (int(minutes) * 60)
+		total_toi_in_seconds = total_toi_in_seconds + int(seconds)
+	return total_toi_in_seconds
+
+def get_player_toi_in_past_games(engine, playername, game_number):
+	season_end = datetime.datetime(2016, 10, 12)
+	season_start = datetime.datetime(2015, 10, 7)
+	games = get_playergames_in_daterange(engine, playername, season_start, season_end)
+	toi = games['TOI'].as_matrix()
+	toi = toi[0:game_number]
+	total_toi_in_seconds = 0
+	for x in toi:
+		digits = x.split(":")
+		#in the highly unlikely event that the TOI is over an hour..
+		if (len(digits) == 3):
+			hours = digits[0]
+			minutes = digits[1]
+			seconds = digits[2]
+			total_toi_in_seconds = total_toi_in_seconds + (int(hours) * 60 * 60)
+		else:
+			minutes = digits[0]
+			seconds = digits[1]
+		total_toi_in_seconds = total_toi_in_seconds + (int(minutes) * 60)
+		total_toi_in_seconds = total_toi_in_seconds + int(seconds)
+	return total_toi_in_seconds
 
 DB_NAME = "../test.db"
 
 engine = get_engine(DB_NAME)
 
-#current date
-date2 = datetime.datetime.now()
-#date way in the past
-date1 = datetime.datetime(2000, 12, 1)
-result = get_player_shot_percentage_in_season(engine, 'Mikael Backlund')
+result = get_player_toi_in_past_games(engine, 'Mikael Backlund', 10)
 print(result)
 
