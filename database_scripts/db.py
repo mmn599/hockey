@@ -53,12 +53,11 @@ def get_player_goals_scored(engine, playername, date1, date2):
 	goals = games['G'].as_matrix()
 	return goals.sum()
 
-DB_NAME = "../test.db"
-
-engine = get_engine(DB_NAME)
-
-date1 = datetime.datetime(2015, 10, 7)
-date2 = datetime.datetime(2015, 12, 1)
-goals_scored = get_player_goals_scored(engine, 'Mikael Backlund', date1, date2)
-print(goals_scored)
-
+def get_opposing_skaters(engine, playergame):
+    if(playergame.Home):
+        team = 1
+    else:
+        team = 0
+    sql_query = 'SELECT * from ' + TABLE_SKATERGAME + ' WHERE ' + " GameName == \'" + str(playergame.GameName) + "\' AND Home == \'" + str(team) + "\';"
+    playergames = pd.read_sql_query(sql_query, engine)
+    print(playergames)
