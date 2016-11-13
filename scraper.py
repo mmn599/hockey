@@ -68,8 +68,7 @@ def player_game_tables_to_csv(file_name, table, game, home, adv_table=None):
     tablehead = table.find('thead')
     tablebody = table.find('tbody')
 
-    headers = [header.text for header in tablehead.find_all('tr')[
-        1].find_all('th')]
+    headers = [header.text for header in tablehead.find_all('tr')[1].find_all('th')]
 
     if(adv_table):
         adv_tablehead = adv_table.find('thead')
@@ -126,19 +125,24 @@ def player_game_tables_to_csv(file_name, table, game, home, adv_table=None):
 
 
 def build_playergame_csvs(season, game):
+    print(game.URL)
     page = urllib.request.urlopen(game.URL).read()
     page = page.decode('utf-8')
     page = page.replace("<!--", "")
     page = page.replace("-->", "")
 
     soup = BeautifulSoup(page, "lxml")
-    tables = soup.find_all('table')
-    skaters_away = tables[6]
-    goalies_away = tables[7]
-    skaters_home = tables[8]
-    goalies_home = tables[9]
-    adv_skaters_home = tables[10]
-    adv_skaters_away = tables[11]
+    tables = soup.find_all('table', attrs={"class": "sortable"})
+    stat_tables = []
+    for table in tables:
+        if('suppress_csv' not in table.attrs['class']):
+            stat_tables.append(table)
+    skaters_away = stat_tables[0]
+    goalies_away = stat_tables[1]
+    skaters_home = stat_tables[2]
+    goalies_home = stat_tables[3]
+    adv_skaters_away = stat_tables[4]
+    adv_skaters_home = stat_tables[5]
 
     home_skater_csv_name = get_playergame_csvname(
         season, game.GameName, home=True, skater=True)
@@ -294,6 +298,9 @@ def get_raw_playergames_df(season):
         goalies.append(d_goalie)
 
     df_skaters = pd.concat(skaters)
+    df_skaters = df_skaters.drop('Player.1')
+    columns = {'EV.1': 'A_EV', 'PP.1': 'A_PP', 'SH.1': 'A_SH'}
+    df_skaters = df_skaters.rename(columns=columns)
     df_goalies = pd.concat(goalies)
 
     joblib.dump(df_skaters, p_skaters)
@@ -303,20 +310,24 @@ def get_raw_playergames_df(season):
 
 
 def scrape_season(season=2015):
+    dir_season = get_season_dir(season)
     dir_goalies = get_goalie_dir(season)
     dir_skaters = get_skater_dir(season)
 
+    if not os.path.exists(dir_season):
+        os.makedirs(dir_season)
+
     if not os.path.exists(dir_goalies):
-        os.makedirs(DIR_SKATERS)
+        os.makedirs(dir_goalies)
 
     if not os.path.exists(dir_skaters):
-        os.makedirs(DIR_GOALIES)
+        os.makedirs(dir_skaters)
 
     fn_overallgames = get_overallgames_filename(season)
     season_url = SEASON_URLS[season]
 
     scrape_games_csv(season_url, fn_overallgames)
-    d_overallgames = get_raw_overallgames_df(season)[0:1]
+    d_overallgames = get_raw_overallgames_df(season)
     build_all_playergame_csvs(season, d_overallgames)
 
     print('Done!')

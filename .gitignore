@@ -4,3 +4,4 @@ data/*.ipynb_checkpoints
 *.db
 .ipynb_checkpoints/
 *.p
+__pycache__/*
