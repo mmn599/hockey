@@ -1,6 +1,6 @@
 import scraper
-from tqdm import tqdm
 import pandas as pd
+from IPython.core import display as ICD
 
 
 def get_past(df_all, loc):
@@ -14,63 +14,72 @@ def get_player(df_all, player):
     return df_all[df_all.Player == player]
 
 
-def get_goals_data(df_skaters, output):
-
+def clean_skater_data(df_skaters):
     df_skaters = df_skaters.drop('URL', 1)
     df_skaters = df_skaters.drop('DateTimestamp', 1)
+    toi = df_skaters.TOI
+    numtoi = []
+    for t in toi:
+        n = t.split(":")
+        time = int(n[0]) * 60 + int(n[1])
+        numtoi.append(time)
+    df_skaters.TOI = numtoi
+    return df_skaters
 
-    features = []
-    goals = []
-    for index, row in df_skaters[50:100].iterrows():
+
+def get_skater_data(season=2015, output="Goals"):
+    df_skaters = scraper.get_raw_skatergames_df(season)
+    df_skaters = clean_skater_data(df_skaters)
+
+    col = ['TS_Goals', 'TS_Assists', 'TS_PlusMinus', 'TS_SoG',
+           'TS_Shot%', 'TS_ATOI']
+    X = pd.DataFrame(columns=col)
+    y = pd.DataFrame(columns=['Goals'])
+
+    ###
+    df_skaters = get_player(df_skaters, df_skaters.iloc[0].Player)
+    ###
+
+    for index in range(len(df_skaters)):
         cur = df_skaters.iloc[index]
-        gamename = cur.GameName
 
         # All past playergames
         df_past = get_past(df_skaters, index)
 
         # Past playergames for target
         df_past_t = get_player(df_past, cur.Player)
+        drops = ['Player', 'Player.1', 'Home', 'Team', 'GameName', 'S%']
+        df_past_t = df_past_t.drop(drops, 1)
 
-        df_t_sums = df_past_t.sum(numeric_only=True)
+        df_t_sums = df_past_t.sum(axis=0)
 
-        # Goals scored in past season
-        t_goals = df_t_sums.G
-
-        # Goals scored recently
-
-        # Goals scored shorthanded
+        # Goals scored in past games
+        t_goals = df_t_sums['G']
 
         # Assists scored in past season
-
-        # Assists scored recently
+        t_assists = df_t_sums['A']
 
         # Plus minus
+        t_plus_minus = df_t_sums['+/-']
 
         # Shots taken
+        t_shots = df_t_sums['S']
 
         # Shooting percentage
+        if(t_shots > 0):
+            t_shoot_percentage = t_goals / t_shots
+        else:
+            t_shoot_percentage = 0
 
-        # TOI
+        # ATOI
+        t_atoi = df_t_sums['TOI'] / (index + 1)
 
-        # Get goals
+        cur_features = [t_goals, t_assists, t_plus_minus,
+                        t_shots, t_shoot_percentage, t_atoi]
+        X.loc[index] = cur_features
+        y.loc[index] = cur.G
 
-        col = ['T_Season_Goals', 'GameName']
-        f = [t_goals, gamename]
-        cur_features = pd.Series(f, col)
-        features.append(cur_features)
-
-        goals.append(pd.Series(cur.G))
-
-    X = pd.concat(features, axis=0)
-    y = pd.concat(goals)
     return X, y
-
-
-def get_skater_data(season=2015, output="Goals"):
-    df_skaters = scraper.get_raw_skatergames_df(season)
-
-    if(output == "Goals"):
-        return get_goals_data(df_skaters, output)
 
 
 # def _pg_to_input0(pg):
@@ -205,7 +214,7 @@ def get_skater_data(season=2015, output="Goals"):
 #     assists = games['A'].as_matrix()
 #     print(assists)
 #     return assists.sum()
-    
+
 # def get_player_assists_in_past_games(engine, playername, game_number):
 #     season_end = datetime.datetime(2016, 10, 12)
 #     season_start = datetime.datetime(2015, 10, 7)
@@ -222,7 +231,7 @@ def get_skater_data(season=2015, output="Goals"):
 #     plus_minus = games['+/-'].as_matrix()
 #     print(plus_minus)
 #     return plus_minus.sum()
-    
+
 # def get_player_plus_minus_in_past_games(engine, playername, game_number):
 #     season_end = datetime.datetime(2016, 10, 12)
 #     season_start = datetime.datetime(2015, 10, 7)
@@ -240,7 +249,7 @@ def get_skater_data(season=2015, output="Goals"):
 #     shots = games['S'].as_matrix()
 #     print(shots)
 #     return shots.sum()
-    
+
 # def get_player_shots_in_past_games(engine, playername, game_number):
 #     season_end = datetime.datetime(2016, 10, 12)
 #     season_start = datetime.datetime(2015, 10, 7)
@@ -260,7 +269,7 @@ def get_skater_data(season=2015, output="Goals"):
 #     goals = games['G'].as_matrix()
 #     total_goals = goals.sum()
 #     return (total_goals / total_shots) * 100
-    
+
 # def get_player_shot_percentage_in_past_games(engine, playername, game_number):
 #     season_end = datetime.datetime(2016, 10, 12)
 #     season_start = datetime.datetime(2015, 10, 7)
@@ -273,7 +282,7 @@ def get_skater_data(season=2015, output="Goals"):
 #     goals = goals[0:game_number]
 #     total_goals = goals.sum()
 #     return (total_goals / total_shots) * 100
-    
+
 # def get_player_toi_in_season(engine, playername):
 #     season_end = datetime.datetime(2016, 10, 12)
 #     season_start = datetime.datetime(2015, 10, 7)
