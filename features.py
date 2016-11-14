@@ -1,28 +1,40 @@
 import scraper
+from tqdm import tqdm
 import pandas as pd
 
 
 def get_past(df_all, loc):
-    cur = df_all[loc]
+    cur = df_all.iloc[loc]
     df_past = df_all[0:loc]
     df_past = df_past[df_past.GameName != cur.GameName]
     return df_past
 
-def get_
+
+def get_player(df_all, player):
+    return df_all[df_all.Player == player]
 
 
 def get_goals_data(df_skaters, output):
-    X = pd.DataFrame()
-    for index, row in df_skaters.iterrows():
-        cur = df_skaters[index]
+
+    df_skaters = df_skaters.drop('URL', 1)
+    df_skaters = df_skaters.drop('DateTimestamp', 1)
+
+    features = []
+    goals = []
+    for index, row in df_skaters[50:100].iterrows():
+        cur = df_skaters.iloc[index]
+        gamename = cur.GameName
 
         # All past playergames
-        df_past = get_past_games(df_skaters, index)
+        df_past = get_past(df_skaters, index)
 
         # Past playergames for target
-        df_past_target = df_past[df_past.Player == cur.Player]
+        df_past_t = get_player(df_past, cur.Player)
+
+        df_t_sums = df_past_t.sum(numeric_only=True)
 
         # Goals scored in past season
+        t_goals = df_t_sums.G
 
         # Goals scored recently
 
@@ -40,16 +52,21 @@ def get_goals_data(df_skaters, output):
 
         # TOI
 
-    if(output == "Goals"):
-        y = df_skaters['G']
-        X = X.drop('G', 1)
-        X = X.drop('URL', 1)
-        X = X.drop('DateTimestamp', 1)
+        # Get goals
 
+        col = ['T_Season_Goals', 'GameName']
+        f = [t_goals, gamename]
+        cur_features = pd.Series(f, col)
+        features.append(cur_features)
+
+        goals.append(pd.Series(cur.G))
+
+    X = pd.concat(features, axis=0)
+    y = pd.concat(goals)
     return X, y
 
 
-def get_player_data(season=2015, output="Goals"):
+def get_skater_data(season=2015, output="Goals"):
     df_skaters = scraper.get_raw_skatergames_df(season)
 
     if(output == "Goals"):

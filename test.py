@@ -1,6 +1,5 @@
-import scraper
 import features
 
-X, y = features.get_player_data()
+X, y = features.get_skater_data()
 
-print(X.columns.values)
+print(X)
