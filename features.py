@@ -1,15 +1,60 @@
 import scraper
+import pandas as pd
 
 
-def get_player_data(season=2015, output="Goals"):
-    df_skaters, df_goalies = scraper.get_raw_playergames_df(season)
+def get_past(df_all, loc):
+    cur = df_all[loc]
+    df_past = df_all[0:loc]
+    df_past = df_past[df_past.GameName != cur.GameName]
+    return df_past
 
-    X = df_skaters.copy()
+def get_
+
+
+def get_goals_data(df_skaters, output):
+    X = pd.DataFrame()
+    for index, row in df_skaters.iterrows():
+        cur = df_skaters[index]
+
+        # All past playergames
+        df_past = get_past_games(df_skaters, index)
+
+        # Past playergames for target
+        df_past_target = df_past[df_past.Player == cur.Player]
+
+        # Goals scored in past season
+
+        # Goals scored recently
+
+        # Goals scored shorthanded
+
+        # Assists scored in past season
+
+        # Assists scored recently
+
+        # Plus minus
+
+        # Shots taken
+
+        # Shooting percentage
+
+        # TOI
+
     if(output == "Goals"):
         y = df_skaters['G']
         X = X.drop('G', 1)
+        X = X.drop('URL', 1)
+        X = X.drop('DateTimestamp', 1)
 
     return X, y
+
+
+def get_player_data(season=2015, output="Goals"):
+    df_skaters = scraper.get_raw_skatergames_df(season)
+
+    if(output == "Goals"):
+        return get_goals_data(df_skaters, output)
+
 
 # def _pg_to_input0(pg):
 #     return pg

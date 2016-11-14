@@ -64,6 +64,7 @@ def player_game_tables_to_csv(file_name, table, game, home, adv_table=None):
     timestamp = game.DateTimestamp
     url = game.URL
     gamename = game.GameName
+    gamenum = game.GameNum
 
     tablehead = table.find('thead')
     tablebody = table.find('tbody')
@@ -86,6 +87,7 @@ def player_game_tables_to_csv(file_name, table, game, home, adv_table=None):
         headers.append("Home")
         headers.append("Team")
         headers.append("GameName")
+        headers.append("GameNum")
         headers.pop(0)
 
         final_rows = []
@@ -100,6 +102,7 @@ def player_game_tables_to_csv(file_name, table, game, home, adv_table=None):
             cells.append(home)
             cells.append(team)
             cells.append(gamename)
+            cells.append(gamenum)
             cells.pop(0)
             final_rows.append(cells)
     else:
@@ -108,6 +111,7 @@ def player_game_tables_to_csv(file_name, table, game, home, adv_table=None):
         headers.append("Home")
         headers.append("Team")
         headers.append("GameName")
+        headers.append("GameNum")
         headers.pop(0)
         final_rows = []
         rows = tablebody.find_all('tr')
@@ -118,6 +122,7 @@ def player_game_tables_to_csv(file_name, table, game, home, adv_table=None):
             cells.append(home)
             cells.append(team)
             cells.append(gamename)
+            cells.append(gamenum)
             cells.pop(0)
             final_rows.append(cells)
 
@@ -253,11 +258,14 @@ def get_raw_overallgames_df(season):
     csv_games = get_overallgames_filename(season)
     d_games = pd.read_csv(csv_games)
     gamenames = []
+    gamenums = []
     dates = []
 
     # TODO: get rid of this for loop
     for game in d_games.iterrows():
-        gamename = get_gamename(2015, game)
+        gamename = get_gamename(season, game)
+        gamenum = game[0]
+        gamenums.append(gamenum)
         gamenames.append(gamename)
         dt = datetime.datetime.strptime(game[1][1], '%Y-%m-%d')
         date = int(dt.timestamp())
@@ -265,6 +273,8 @@ def get_raw_overallgames_df(season):
 
     d_games['DateTimestamp'] = dates
     d_games['GameName'] = gamenames
+    print('adding gamenum')
+    d_games['GameNum'] = gamenums
     d_games = d_games.rename(index=str, columns={"Unnamed: 6": "OT"})
     d_games = d_games.drop('Notes', 1)
     d_games.OT = d_games.OT == "OT"
@@ -274,39 +284,53 @@ def get_raw_overallgames_df(season):
     return d_games
 
 
-def get_raw_playergames_df(season):
+def get_raw_goaliegames_df(season):
+
+    p_goalies = get_p_goaliegames_filename(season)
+
+    if(os.path.isfile(p_goalies)):
+        df_goalies = joblib.load(p_goalies)
+        return df_goalies
+
+    csvs_all_goalies = get_all_goalie_csvs(season)
+    df_goalies = pd.DataFrame()
+    goalies = []
+
+    for csv_goalie in csvs_all_goalies:
+        d_goalie = pd.read_csv(csv_goalie, encoding="latin_1")
+        goalies.append(d_goalie)
+
+    df_goalies = pd.concat(goalies)
+
+    joblib.dump(df_goalies, p_goalies)
+
+    return df_goalies
+
+
+def get_raw_skatergames_df(season):
 
     p_skaters = get_p_skatergames_filename(season)
-    p_goalies = get_p_goaliegames_filename(season)
 
     if(os.path.isfile(p_skaters)):
         df_skaters = joblib.load(p_skaters)
-        df_goalies = joblib.load(p_goalies)
-        return df_skaters, df_goalies
+        return df_skaters
 
     csvs_all_skaters = get_all_skater_csvs(season)
-    csvs_all_goalies = get_all_goalie_csvs(season)
     df_skaters = pd.DataFrame()
-    df_goalies = pd.DataFrame()
     skaters = []
-    goalies = []
 
-    for csv_skater, csv_goalie in zip(csvs_all_skaters, csvs_all_goalies):
+    for csv_skater in csvs_all_skaters:
         d_skater = pd.read_csv(csv_skater, encoding="latin_1")
         skaters.append(d_skater)
-        d_goalie = pd.read_csv(csv_goalie, encoding="latin_1")
-        goalies.append(d_goalie)
 
     df_skaters = pd.concat(skaters)
     df_skaters = df_skaters.drop('Player.1')
     columns = {'EV.1': 'A_EV', 'PP.1': 'A_PP', 'SH.1': 'A_SH'}
     df_skaters = df_skaters.rename(columns=columns)
-    df_goalies = pd.concat(goalies)
 
     joblib.dump(df_skaters, p_skaters)
-    joblib.dump(df_goalies, p_goalies)
 
-    return df_skaters, df_goalies
+    return df_skaters
 
 
 def scrape_season(season=2015):
