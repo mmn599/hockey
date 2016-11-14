@@ -41,15 +41,13 @@ def get_skater_data(season=2015, output="Goals"):
     df_skaters = clean_skater_data(df_skaters)
     df_goalies = scraper.get_raw_goaliegames_df(season)
 
-    col = ['TS', 'TS_Goals', 'TS_Assists', 'TS_PlusMinus', 'TS_SoG',
-           'TS_Shot%', 'TS_ATOI', 'TM_Goals', 'TM_Shots', 'Opp_GA',
+    col = ['O_Goals', 'O_Assists', 'O_Blocks', 'O_Shorthanded', 'Out_Shots',
+           'TS', 'TS_Goals', 'TS_Assists', 'TS_PlusMinus', 'TS_SoG',
+           'TS_Shot%', 'TS_ATOI', 'TS_iCF', 'TS_SATF', 'TS_SATA',
+           'TS_ZSO', 'TS_HIT', 'TS_BLK',
+           'TM_Goals', 'TM_Shots', 'Opp_GA',
            'Opp_SA', 'Opp_SV%']
     X = pd.DataFrame(columns=col)
-    y = pd.DataFrame(columns=['Goals'])
-
-    ###
-    # df_skaters = get_player(df_skaters, df_skaters.iloc[0].Player)
-    ###
 
     for index in tqdm(range(len(df_skaters))):
         cur = df_skaters.iloc[index]
@@ -66,19 +64,17 @@ def get_skater_data(season=2015, output="Goals"):
 
         df_t_sums = df_past_t.sum(axis=0)
 
-        # Average goals scored in past games
         t_goals = df_t_sums['G'] / num
-
-        # Average assists scored in past season
         t_assists = df_t_sums['A'] / num
-
-        # Plus minus
         t_plus_minus = df_t_sums['+/-']
-
-        # Shots taken
         t_shots = df_t_sums['S'] / num
+        t_iCF = df_t_sums['iCF'] / num
+        t_SATF = df_t_sums['SATF'] / num
+        t_SATA = df_t_sums['SATA'] / num
+        t_ZSO = df_t_sums['ZSO'] / num
+        t_hit = df_t_sums['HIT'] / num
+        t_blk = df_t_sums['BLK'] / num
 
-        # Shooting percentage
         if(t_shots > 0):
             t_shoot_percentage = t_goals / t_shots
         else:
@@ -116,10 +112,18 @@ def get_skater_data(season=2015, output="Goals"):
         # Goalie save percentage
         opp_svpercentage = opp_ga / opp_sa
 
-        cur_features = [cur.Player, t_goals, t_assists, t_plus_minus,
-                        t_shots, t_shoot_percentage, t_atoi, tm_goalspergame,
-                        tm_shotspergame, opp_ga, opp_sa, opp_svpercentage]
-        X.loc[index] = cur_features
-        y.loc[index] = cur.G
+        out_goals = cur['G']
+        out_assists = cur['A']
+        out_blks = cur['BLK']
+        out_short = cur['SH'] + cur['A_SH']
+        out_shots = cur['S']
 
-    return X, y
+        cur_features = [out_goals, out_assists, out_blks, out_short, out_shots,
+                        cur.Player, t_goals, t_assists, t_plus_minus, t_shots,
+                        t_shoot_percentage, t_atoi, t_iCF,
+                        t_SATF, t_SATA, t_ZSO, t_hit, t_blk, tm_goalspergame,
+                        tm_shotspergame, opp_ga, opp_sa, opp_svpercentage]
+
+        X.loc[index] = cur_features
+
+    return X
