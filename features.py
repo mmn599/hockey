@@ -61,7 +61,7 @@ SKATER_COLS = ['GameNum', 'GameName', 'Player', 'DateTimestamp', 'Num',
                'Opp_SA', 'Opp_SV%']
 
 
-def get_skater_feat(cur, df_skaters, df_overall, df_goalies):
+def get_skater_feat(cur, df_skaters, df_goalies, df_overall):
     timestamp = cur.DateTimestamp
 
     # All past playergames
@@ -95,9 +95,13 @@ def get_skater_feat(cur, df_skaters, df_overall, df_goalies):
     df1 = df_overall_past[df_overall_past.Home == cur.Team]
     goals_home = df1.sum(axis=0)['G.1']
     df2 = df_overall_past[df_overall_past.Visitor == cur.Team]
+    print(df1.to_string())
+    print(df2.to_string())
     goals_away = df2.sum(axis=0)['G']
     print('Home games: ' + str(len(df1)))
     print('Away games: ' + str(len(df2)))
+    print('Goals home: ' + str(goals_home))
+    print('Goals away: ' + str(goals_away))
     tm_goalspergame = (goals_away + goals_home) / (len(df1) + len(df2))
 
     df = df_goalies[df_goalies.GameName == cur.GameName]
@@ -125,24 +129,28 @@ def get_skater_feat(cur, df_skaters, df_overall, df_goalies):
                     t_SATF, t_SATA, t_ZSO, t_hit, t_blk, tm_goalspergame,
                     opp_ga, opp_sa, opp_svpercentage]
 
-    return cur_features
+    # return cur_features
+    return df1, df2
+
+
+def get_cleaned_data(raw_s, raw_g, raw_o):
+    df_skaters = clean_skater_data(raw_s)
+    df_skaters = df_skaters.sort_values('GameNum', ascending=True)
+    df_goalies = raw_g.sort_values('GameNum', ascending=True)
+    df_overall = raw_o.sort_values('GameNum')
+    return df_skaters, df_goalies, df_overall
 
 
 def get_skater_data(season=2015, output="Goals"):
-    df_skaters = scraper.get_raw_skatergames_df(season)
-    df_skaters = clean_skater_data(df_skaters)
-    df_skaters = df_skaters.sort_values('GameNum', ascending=True)
-    df_goalies = scraper.get_raw_goaliegames_df(season)
-    df_goalies = df_goalies.sort_values('GameNum', ascending=True)
-    df_overall = scraper.get_raw_overallgames_df(season)
-    df_overall = df_overall.sort_values('GameNum')
+    raw_s = scraper.get_raw_skatergames_df(season)
+    raw_g = scraper.get_raw_goaliegames_df(season)
+    raw_o = scraper.get_raw_overallgames_df(season)
+    df_s, df_g, df_o = get_cleaned_data(raw_s, raw_g, raw_o)
 
     X = pd.DataFrame(columns=SKATER_COLS)
-
-    for index in tqdm(range(len(df_skaters) // 2, len(df_skaters))):
-
-        cur = df_skaters.iloc[index]
-        cur_features = get_skater_feat(cur, df_skaters, df_overall, df_goalies)
+    for index in tqdm(range(len(df_s) // 2, len(df_s))):
+        cur = df_s.iloc[index]
+        cur_features = get_skater_feat(cur, df_s, df_g, df_o)
         X.loc[index] = cur_features
 
     return X
