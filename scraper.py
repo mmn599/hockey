@@ -59,7 +59,30 @@ def scrape_games_csv(url, filename):
     to_csv(filename, headers, rows)
 
 
-def player_game_tables_to_csv(file_name, table, game, home, adv_table=None):
+def adv_game_table_to_csv(file_name, adv_table, game):
+    gamename = game.GameName
+
+    adv_tablehead = adv_table.find('thead')
+    adv_tablebody = adv_table.find('tbody')
+    headers = [header.text for header in adv_tablehead.find_all('tr')[
+        0].find_all('th')]
+    for i, h in enumerate(headers):
+        headers[i] = h.replace("%", "")
+        headers[i] = h.replace("‑", "")
+
+    headers.append("GameName")
+
+    final_rows = []
+    adv_rows = adv_tablebody.find_all('tr', attrs={"class": "ALLAll"})
+    for adv_row in adv_rows:
+        cells = [cell.text for cell in adv_row.find_all(['th', 'td'])]
+        cells.append(gamename)
+        final_rows.append(cells)
+
+    to_csv(file_name, headers, final_rows)
+
+
+def player_game_tables_to_csv(file_name, table, game, home):
     team = game.Home if home else game.Visitor
     timestamp = game.DateTimestamp
     url = game.URL
@@ -69,68 +92,33 @@ def player_game_tables_to_csv(file_name, table, game, home, adv_table=None):
     tablehead = table.find('thead')
     tablebody = table.find('tbody')
 
-    headers = [header.text for header in tablehead.find_all('tr')[1].find_all('th')]
+    headers = [header.text for header in
+               tablehead.find_all('tr')[1].find_all('th')]
 
-    if(adv_table):
-        adv_tablehead = adv_table.find('thead')
-        adv_tablebody = adv_table.find('tbody')
-        adv_headers = [header.text for header in adv_tablehead.find_all('tr')[
-            0].find_all('th')]
-        for i, h in enumerate(adv_headers):
-            adv_headers[i] = h.replace("%", "")
-            adv_headers[i] = h.replace("‑", "")
-
-        headers.extend(adv_headers)
-
-        headers.append("URL")
-        headers.append("DateTimestamp")
-        headers.append("Home")
-        headers.append("Team")
-        headers.append("GameName")
-        headers.append("GameNum")
-        headers.pop(0)
-
-        final_rows = []
-        rows = tablebody.find_all('tr')
-        adv_rows = adv_tablebody.find_all('tr', attrs={"class": "ALLAll"})
-        for row, adv_row in zip(rows, adv_rows):
-            cells = [cell.text for cell in row.find_all(['th', 'td'])]
-            adv_cells = [cell.text for cell in adv_row.find_all(['th', 'td'])]
-            cells.extend(adv_cells)
-            cells.append(url)
-            cells.append(timestamp)
-            cells.append(home)
-            cells.append(team)
-            cells.append(gamename)
-            cells.append(gamenum)
-            cells.pop(0)
-            final_rows.append(cells)
-    else:
-        headers.append("URL")
-        headers.append("DateTimestamp")
-        headers.append("Home")
-        headers.append("Team")
-        headers.append("GameName")
-        headers.append("GameNum")
-        headers.pop(0)
-        final_rows = []
-        rows = tablebody.find_all('tr')
-        for row in rows:
-            cells = [cell.text for cell in row.find_all(['th', 'td'])]
-            cells.append(url)
-            cells.append(timestamp)
-            cells.append(home)
-            cells.append(team)
-            cells.append(gamename)
-            cells.append(gamenum)
-            cells.pop(0)
-            final_rows.append(cells)
+    headers.append("URL")
+    headers.append("DateTimestamp")
+    headers.append("Home")
+    headers.append("Team")
+    headers.append("GameName")
+    headers.append("GameNum")
+    headers.pop(0)
+    final_rows = []
+    rows = tablebody.find_all('tr')
+    for row in rows:
+        cells = [cell.text for cell in row.find_all(['th', 'td'])]
+        cells.append(url)
+        cells.append(timestamp)
+        cells.append(home)
+        cells.append(team)
+        cells.append(gamename)
+        cells.append(gamenum)
+        cells.pop(0)
+        final_rows.append(cells)
 
     to_csv(file_name, headers, final_rows)
 
 
 def build_playergame_csvs(season, game):
-    print(game.URL)
     page = urllib.request.urlopen(game.URL).read()
     page = page.decode('utf-8')
     page = page.replace("<!--", "")
@@ -155,9 +143,9 @@ def build_playergame_csvs(season, game):
         season, game.GameName, home=False, skater=True)
 
     player_game_tables_to_csv(home_skater_csv_name,
-                              skaters_home, game, True, adv_skaters_home)
+                              skaters_home, game, True)
     player_game_tables_to_csv(away_skater_csv_name,
-                              skaters_away, game, False, adv_skaters_away)
+                              skaters_away, game, False)
 
     home_goalie_csv_name = get_playergame_csvname(
         season, game.GameName, home=True, skater=False)
@@ -168,13 +156,18 @@ def build_playergame_csvs(season, game):
     player_game_tables_to_csv(away_goalie_csv_name,
                               goalies_away, game, False)
 
+    home_adv_csv_name = get_adv_csvname(season, game.GameName, True)
+    adv_game_table_to_csv(home_adv_csv_name, adv_skaters_home, game)
+    away_adv_csv_name = get_adv_csvname(season, game.GameName, False)
+    adv_game_table_to_csv(away_adv_csv_name, adv_skaters_away, game)
+
     skater_csvs = [home_skater_csv_name, away_skater_csv_name]
     goalie_csvs = [home_goalie_csv_name, away_goalie_csv_name]
 
     return skater_csvs, goalie_csvs
 
 
-def build_all_playergame_csvs(season, games):
+def scrape_all_playergame_csvs(season, games):
     print('Scraping and building csv files for all player stats...')
     all_skater_csvs = []
     all_goalie_csvs = []
@@ -193,6 +186,7 @@ DIR_SKATERS = "Skaters/"
 DIR_GOALIES = "Goalies/"
 FILE_GAMES = "2015Games.csv"
 PLAYER_STATS_FILE = "PlayerStats"
+ADV_FILE = "ADV"
 HOME = "Home"
 AWAY = "Away"
 
@@ -246,6 +240,12 @@ def get_playergame_csvname(season, gamename, home, skater):
     else:
         directory = get_goalie_dir(season)
     return directory + gamename + "_" + team + "_" + player + ".csv"
+
+
+def get_adv_csvname(season, gamename, home):
+    directory = get_skater_dir(season)
+    home = "Home" if home else "Away"
+    return directory + ADV_FILE + "_" + gamename + "_" + home + ".csv"
 
 
 def get_raw_overallgames_df(season):
@@ -352,6 +352,6 @@ def scrape_season(season=2015):
 
     scrape_games_csv(season_url, fn_overallgames)
     d_overallgames = get_raw_overallgames_df(season)
-    build_all_playergame_csvs(season, d_overallgames)
+    scrape_all_playergame_csvs(season, d_overallgames)
 
     print('Done!')
