@@ -61,7 +61,7 @@ def get_skater_data(season=2015, output="Goals"):
     df_overall = scraper.get_raw_overallgames_df(season)
     df_overall = df_overall.sort_values('GameNum')
 
-    col = ['GameName', 'Player', 'DateTimestamp', 'Num',
+    col = ['GameNum', 'GameName', 'Player', 'DateTimestamp', 'Num',
            'O_Goals', 'O_Assists', 'O_Blocks', 'O_Shorthanded', 'O_Shots',
            'TS_Goals', 'TS_Assists', 'TS_PlusMinus', 'TS_SoG',
            'TS_Shot%', 'TS_ATOI', 'TS_iCF', 'TS_SATF', 'TS_SATA',
@@ -127,7 +127,7 @@ def get_skater_data(season=2015, output="Goals"):
         out_short = cur['SH'] + cur['A_SH']
         out_shots = cur['S']
 
-        cur_features = [cur.GameName, cur.Player, timestamp, num,
+        cur_features = [cur.GameNum, cur.GameName, cur.Player, timestamp, num,
                         out_goals, out_assists, out_blks, out_short, out_shots,
                         t_goals, t_assists, t_plus_minus, t_shots,
                         t_shoot_percentage, t_atoi, t_iCF,
