@@ -36,12 +36,30 @@ def get_opponents(pg, df_skaters):
     return list(df.Player)
 
 
+def get_team_stats():
+    return 0
+    # Target team season stats
+    # # teammates = get_teammates(cur, df_skaters)
+    # # tm_goalspergame = 0
+    # # tm_shotspergame = 0
+    # # for teammate in teammates:
+    # #     df_tm_past = get_player(df_past, teammate)
+    # #     df_tm_past = df_tm_past.drop(drops, 1)
+    # #     sums = df_tm_past.sum(axis=0)
+    # #     tm_goalspergame += sums['G']
+    # #     tm_shotspergame += sums['S']
+    # tm_goalspergame = tm_goalspergame / num
+    # tm_shotspergame = tm_shotspergame / num
+
+
 def get_skater_data(season=2015, output="Goals"):
     df_skaters = scraper.get_raw_skatergames_df(season)
     df_skaters = clean_skater_data(df_skaters)
-    df_skaters = df_skaters.sort_values('DateTimestamp', ascending=True)
+    df_skaters = df_skaters.sort_values('GameNum', ascending=True)
     df_goalies = scraper.get_raw_goaliegames_df(season)
+    df_goalies = df_goalies.sort_values('GameNum', ascending=True)
     df_overall = scraper.get_raw_overallgames_df(season)
+    df_overall = df_overall.sort_values('GameNum')
 
     col = ['GameName', 'Player', 'DateTimestamp', 'Num',
            'O_Goals', 'O_Assists', 'O_Blocks', 'O_Shorthanded', 'O_Shots',
@@ -53,6 +71,7 @@ def get_skater_data(season=2015, output="Goals"):
     X = pd.DataFrame(columns=col)
 
     for index in tqdm(range(len(df_skaters) // 2, len(df_skaters))):
+
         cur = df_skaters.iloc[index]
         timestamp = cur.DateTimestamp
 
@@ -65,7 +84,6 @@ def get_skater_data(season=2015, output="Goals"):
                  'Team', 'GameName', 'S%']
         df_past_t = df_past_t.drop(drops, 1)
         num = len(df_past_t)
-
         df_t_sums = df_past_t.sum(axis=0)
 
         t_goals = df_t_sums['G'] / num
@@ -78,33 +96,18 @@ def get_skater_data(season=2015, output="Goals"):
         t_ZSO = df_t_sums['ZSO'] / num
         t_hit = df_t_sums['HIT'] / num
         t_blk = df_t_sums['BLK'] / num
-
+        t_atoi = df_t_sums['TOI'] / num
         if(t_shots > 0):
             t_shoot_percentage = t_goals / t_shots
         else:
             t_shoot_percentage = 0
 
-        # ATOI
-        t_atoi = df_t_sums['TOI'] / (index + 1)
-
-        # Target team season stats
-        # # teammates = get_teammates(cur, df_skaters)
-        # # tm_goalspergame = 0
-        # # tm_shotspergame = 0
-        # # for teammate in teammates:
-        # #     df_tm_past = get_player(df_past, teammate)
-        # #     df_tm_past = df_tm_past.drop(drops, 1)
-        # #     sums = df_tm_past.sum(axis=0)
-        # #     tm_goalspergame += sums['G']
-        # #     tm_shotspergame += sums['S']
-        # tm_goalspergame = tm_goalspergame / num
         df_overall_past = get_past(df_overall, timestamp)
         df1 = df_overall_past[df_overall_past.Home == cur.Team]
         goals_home = df1.sum(axis=0)['G.1']
         df2 = df_overall_past[df_overall_past.Visitor == cur.Team]
         goals_away = df2.sum(axis=0)['G']
         tm_goalspergame = (goals_away + goals_home) / (len(df1) + len(df2))
-        # tm_shotspergame = tm_shotspergame / num
 
         df = df_goalies[df_goalies.GameName == cur.GameName]
         opp_goalie = list(df[df.Home != cur.Home].Player)[0]
@@ -114,12 +117,8 @@ def get_skater_data(season=2015, output="Goals"):
         g_num = len(df_opp_goalie)
 
         opp_goalies_sums = df_opp_goalie.sum(axis=0)
-
-        # Goals against
         opp_ga = opp_goalies_sums['GA'] / g_num
-        # Shots against
         opp_sa = opp_goalies_sums['SA'] / g_num
-        # Goalie save percentage
         opp_svpercentage = opp_ga / opp_sa
 
         out_goals = cur['G']
