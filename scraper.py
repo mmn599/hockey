@@ -92,8 +92,12 @@ def player_game_tables_to_csv(file_name, table, game, home):
     tablehead = table.find('thead')
     tablebody = table.find('tbody')
 
-    headers = [header.text for header in
-               tablehead.find_all('tr')[1].find_all('th')]
+    headers = []
+    for header in tablehead.find_all('tr')[1].find_all('th'):
+        text = header.text
+        if(text in headers):
+            text = text + ".1"
+        headers.append(text)
 
     headers.append("URL")
     headers.append("DateTimestamp")
@@ -273,7 +277,6 @@ def get_raw_overallgames_df(season):
 
     d_games['DateTimestamp'] = dates
     d_games['GameName'] = gamenames
-    print('adding gamenum')
     d_games['GameNum'] = gamenums
     d_games = d_games.rename(index=str, columns={"Unnamed: 6": "OT"})
     d_games = d_games.drop('Notes', 1)
@@ -316,21 +319,30 @@ def get_raw_skatergames_df(season):
         return df_skaters
 
     csvs_all_skaters = get_all_skater_csvs(season)
+
     df_skaters = pd.DataFrame()
     skaters = []
+    df_adv_skaters = pd.DataFrame()
+    adv_skaters = []
 
     for csv_skater in csvs_all_skaters:
-        d_skater = pd.read_csv(csv_skater, encoding="latin_1")
-        skaters.append(d_skater)
+        d = pd.read_csv(csv_skater, encoding="latin_1")
+        if("ADV" in str(csv_skater)):
+            adv_skaters.append(d)
+        else:
+            skaters.append(d)
 
     df_skaters = pd.concat(skaters)
-    df_skaters = df_skaters.drop('Player.1')
+    df_adv_skaters = pd.concat(adv_skaters)
+
     columns = {'EV.1': 'A_EV', 'PP.1': 'A_PP', 'SH.1': 'A_SH'}
     df_skaters = df_skaters.rename(columns=columns)
 
-    joblib.dump(df_skaters, p_skaters)
+    df = pd.merge(df_skaters, df_adv_skaters, on=['GameName', 'Player'])
 
-    return df_skaters
+    joblib.dump(df, p_skaters)
+
+    return df
 
 
 def scrape_season(season=2015):
