@@ -95,13 +95,7 @@ def get_skater_feat(cur, df_skaters, df_goalies, df_overall):
     df1 = df_overall_past[df_overall_past.Home == cur.Team]
     goals_home = df1.sum(axis=0)['G.1']
     df2 = df_overall_past[df_overall_past.Visitor == cur.Team]
-    print(df1.to_string())
-    print(df2.to_string())
     goals_away = df2.sum(axis=0)['G']
-    print('Home games: ' + str(len(df1)))
-    print('Away games: ' + str(len(df2)))
-    print('Goals home: ' + str(goals_home))
-    print('Goals away: ' + str(goals_away))
     tm_goalspergame = (goals_away + goals_home) / (len(df1) + len(df2))
 
     df = df_goalies[df_goalies.GameName == cur.GameName]
@@ -129,8 +123,7 @@ def get_skater_feat(cur, df_skaters, df_goalies, df_overall):
                     t_SATF, t_SATA, t_ZSO, t_hit, t_blk, tm_goalspergame,
                     opp_ga, opp_sa, opp_svpercentage]
 
-    # return cur_features
-    return df1, df2
+    return cur_features
 
 
 def get_cleaned_data(raw_s, raw_g, raw_o):

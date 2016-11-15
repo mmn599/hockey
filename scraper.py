@@ -354,7 +354,6 @@ def get_raw_skatergames_df(season):
 def scrape_pgs(season):
     d_overallgames = get_raw_overallgames_df(season)
     d_somegames = d_overallgames[d_overallgames.GameNum > 988]
-    print(d_somegames.to_string())
     scrape_all_playergame_csvs(season, d_somegames)
 
 
