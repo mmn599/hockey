@@ -1,5 +1,4 @@
-# import features
-import scraper
+import features
 
 season = 2015
-df = scraper.get_raw_overallgames_df(season)
+features.build_skater_data("2015Skaters.p", season)

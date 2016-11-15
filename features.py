@@ -1,6 +1,7 @@
 import scraper
 import pandas as pd
 from tqdm import tqdm
+from sklearn.externals import joblib
 
 
 def get_past(df_all, timestamp):
@@ -108,7 +109,7 @@ def get_skater_feat(cur, df_skaters, df_goalies, df_overall):
     opp_goalies_sums = df_opp_goalie.sum(axis=0)
     opp_ga = opp_goalies_sums['GA'] / g_num
     opp_sa = opp_goalies_sums['SA'] / g_num
-    opp_svpercentage = opp_ga / opp_sa
+    opp_svpercentage = 1 - (opp_ga / opp_sa)
 
     out_goals = cur['G']
     out_assists = cur['A']
@@ -134,7 +135,7 @@ def get_cleaned_data(raw_s, raw_g, raw_o):
     return df_skaters, df_goalies, df_overall
 
 
-def get_skater_data(season=2015, output="Goals"):
+def get_skater_data(season=2015):
     raw_s = scraper.get_raw_skatergames_df(season)
     raw_g = scraper.get_raw_goaliegames_df(season)
     raw_o = scraper.get_raw_overallgames_df(season)
@@ -147,3 +148,8 @@ def get_skater_data(season=2015, output="Goals"):
         X.loc[index] = cur_features
 
     return X
+
+
+def build_skater_data(fn, season):
+    X = get_skater_data(season)
+    joblib.dump(X, fn)
