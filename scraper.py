@@ -345,6 +345,13 @@ def get_raw_skatergames_df(season):
     return df
 
 
+def scrape_pgs(season):
+    d_overallgames = get_raw_overallgames_df(season)
+    d_somegames = d_overallgames[d_overallgames.GameNum > 988]
+    print(d_somegames.to_string())
+    scrape_all_playergame_csvs(season, d_somegames)
+
+
 def scrape_season(season=2015):
     dir_season = get_season_dir(season)
     dir_goalies = get_goalie_dir(season)

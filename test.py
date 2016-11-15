@@ -1,3 +1,3 @@
 import scraper
 
-scraper.scrape_season(2015)
+scraper.scrape_pgs(2015)
