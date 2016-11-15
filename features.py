@@ -80,7 +80,7 @@ def get_skater_data(season=2015, output="Goals"):
 
         # Season stats for target player
         df_past_t = get_player(df_past, cur.Player)
-        drops = ['DateTimestamp', 'Player', 'Player.1', 'Home',
+        drops = ['DateTimestamp', 'Player', 'Home',
                  'Team', 'GameName', 'S%']
         df_past_t = df_past_t.drop(drops, 1)
         num = len(df_past_t)
