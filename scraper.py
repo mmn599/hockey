@@ -45,7 +45,13 @@ def scrape_games_csv(url, filename):
     tablehead = soup.find('thead')
     tablebody = soup.find('tbody')
 
-    headers = [header.text for header in tablehead.find('tr').find_all('th')]
+    headers = []
+    hs = tablehead.find('tr').find_all('th')
+    for header in hs:
+        text = header.text
+        if(text in headers):
+            text = text + ".1"
+        headers.append(text)
     headers.insert(0, "URL")
     rows = []
 
