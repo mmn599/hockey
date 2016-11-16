@@ -1,5 +1,10 @@
 import pandas as pd
 from sklearn.externals import joblib
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_curve
+from matplotlib import pyplot as plt
+
 
 
 DROPCOLS = ['GameNum', 'GameName', 'Player', 'DateTimestamp', 'Num']
@@ -33,3 +38,17 @@ def get_training_data(seasons, output, nthresh=20, gthresh=10, dropcols=DROPCOLS
         raise Exception('Fuck you')
 
     return X, y
+
+
+def visualize(clf, X_test, y_test):
+    y_prob = clf.predict_proba(X_test)
+    y_pred = clf.predict(X_test)
+    fpr, tpr, _ = roc_curve(y_test, y_prob[:,1])
+    plt.plot(fpr, tpr)
+    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC')
+    plt.show()
+    cm = confusion_matrix(y_test, y_pred)
+    print(cm)
