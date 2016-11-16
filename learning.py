@@ -47,35 +47,65 @@ def prepare_base_data(df, output, dropcols=MISC_COLS):
 
     if(output == "Goals"):
         y = df['O_Goals']
-        # y.loc[y > 0] = 1
     elif(output == "Assists"):
         y = df['O_Assists']
+    elif(output == "Shots"):
+        y = df['O_Shots']
+    elif(output == "Blocks"):
+        y = df['O_Blocks']
     else:
         raise Exception('Fuck you')
 
     return df, X, y
 
+# goals, assists, shots, blocks
+WEIGHTS = np.array([3, 2, .5, .5])
+OCOLS =  ["O_Goals", "O_Assists", "O_Shots", "O_Blocks"]
 
-def score(df, clf):
-    timestamps = list(df['DateTimestamp'])
-    timestamps = list(set(timestamps))
+
+def getpoints(clf, X, y, weight):
+    probs = clf.predict_proba(X)
+    e = np.sum(np.array(range(probs.shape[1])) * probs, axis=1)
+    epoints = e * weight
+    apoints = y * weight
+    return epoints, apoints
+
+
+def score(df, clf_goals=None, clf_assists=None, clf_shots=None, clf_blocks=None):
+    timestamps = list(set(list(df['DateTimestamp'])))
     diff = []
+
     for time in tqdm(timestamps):
         df_day = df[df.DateTimestamp == time]
-        df_day, X, y = prepare_base_data(df_day, "Goals")
-        yprob = clf.predict_proba(X)
+
+        df_day, X_goals, y_goals = prepare_base_data(df_day, "Goals")
+        df_day, X_assists, y_assists = prepare_base_data(df_day, "Assists")
+        df_day, X_shots, y_shots = prepare_base_data(df_day, "Shots")
+        df_day, X_blocks, y_blocks = prepare_base_data(df_day, "Blocks")
+
         expected = np.zeros((len(df_day), 1))
-        for i in range(0,yprob.shape[1]):
-            probs = yprob[:,i]
-            col = str(i)
-            df_day[col] = probs
-            expected[:,0] = expected[:,0] + (probs * i)
-        df_day['E_Goals'] = expected
-        df_true_rank = df_day.sort_values('O_Goals')
-        df_our_rank = df_day.sort_values('E_Goals')
+        actual = np.zeros((len(df_day), 1))
+
+        clfs = [clf_goals, clf_assists, clf_shots, clf_blocks]
+        Xs = [X_goals, X_assists, X_shots, X_blocks]
+        ys = [y_goals, y_assists, y_shots, y_blocks]
+
+        for clf, X, y, weight in zip(clfs, Xs, ys, WEIGHT):
+            if(clf):
+                epoints, apoints = getpoints(clf, X, y, weight)
+                expected += epoints
+                actual += apoints
+
+        df_day['Expected'] = expected
+        df_day['Actual'] = actual
+
+        df_true_rank = df_day.sort_values('Actual', ascending=False)
+        df_our_rank = df_day.sort_values('Expected', ascending=False)
         top = 10
-        true = df_true_rank.iloc[0:top].sum()['O_Goals']
-        pred = df_our_rank.iloc[0:top].sum()['O_Goals']
+        true = df_true_rank.iloc[0:top].sum()['Actual']
+        pred = df_our_rank.iloc[0:top].sum()['Actual']
         diff.append(pred - true)
-    diff = np.sum(np.array(diff) ** 2) / len(diff)
-    return diff
+
+    abse = np.abs(np.array(diff)) / len(diff)
+
+    return abse
