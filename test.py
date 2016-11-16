@@ -1,4 +1,3 @@
-import features
+import scraper
 
-season = 2015
-features.build_skater_data("2015Skaters.p", season)
+scraper.scrape_season(2014)

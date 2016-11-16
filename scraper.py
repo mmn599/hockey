@@ -203,7 +203,8 @@ AWAY = "Away"
 DATA_DIR = "data/"
 
 SEASON_URLS = {
-    2015: "http://www.hockey-reference.com/leagues/NHL_2016_games.html"}
+    2015: "http://www.hockey-reference.com/leagues/NHL_2016_games.html",
+    2014: "http://www.hockey-reference.com/leagues/NHL_2015_games.html"}
 
 
 def get_season_dir(season=2015):
