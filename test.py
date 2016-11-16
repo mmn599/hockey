@@ -1,3 +1,3 @@
-import scraper
+import learning
 
-scraper.scrape_season(2014)
+X, y = learning.get_training_data([2015], "Goals")
