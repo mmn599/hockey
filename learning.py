@@ -4,13 +4,14 @@ from sklearn.model_selection import cross_val_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve
 from matplotlib import pyplot as plt
+from sklearn.preprocessing import StandardScaler 
 
 
 
 DROPCOLS = ['GameNum', 'GameName', 'Player', 'DateTimestamp', 'Num']
 
 
-def get_training_data(seasons, output, nthresh=20, gthresh=10, dropcols=DROPCOLS):
+def get_data(seasons, output, nthresh=20, gthresh=10, dropcols=DROPCOLS):
 
     if(type(seasons)==int):
         seasons = [seasons]
@@ -29,6 +30,9 @@ def get_training_data(seasons, output, nthresh=20, gthresh=10, dropcols=DROPCOLS
 
     outputs = [x for x in df.columns.values if 'O_' in x]    
     X = df.drop(outputs, 1)
+    scaler = StandardScaler()
+    scaler.fit(X)
+    X = scaler.transform(X)
 
     if(output == "Goals"):
         y = df['O_Goals']
