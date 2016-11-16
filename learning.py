@@ -77,4 +77,5 @@ def score(df, clf):
         true = df_true_rank.iloc[0:top].sum()['O_Goals']
         pred = df_our_rank.iloc[0:top].sum()['O_Goals']
         diff.append(pred - true)
+    diff = np.sum(np.array(diff) ** 2) / len(diff)
     return diff
