@@ -13,7 +13,7 @@ DROPCOLS = ['GameNum', 'GameName', 'Player', 'DateTimestamp', 'Num']
 def get_training_data(seasons, output, nthresh=20, gthresh=10, dropcols=DROPCOLS):
 
     if(type(seasons)==int):
-        seasons = list(seasons)
+        seasons = [seasons]
 
     data = []
     for season in seasons:
@@ -32,6 +32,7 @@ def get_training_data(seasons, output, nthresh=20, gthresh=10, dropcols=DROPCOLS
 
     if(output == "Goals"):
         y = df['O_Goals']
+        y[y > 0] = 1
     elif(output == "Assists"):
         y = df['O_Assists']
     else:
