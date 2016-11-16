@@ -7,6 +7,9 @@ DROPCOLS = ['GameNum', 'GameName', 'Player', 'DateTimestamp', 'Num']
 
 def get_training_data(seasons, output, nthresh=20, gthresh=10, dropcols=DROPCOLS):
 
+    if(type(seasons)==int):
+        seasons = list(seasons)
+
     data = []
     for season in seasons:
         fn = str(season) + 'Skaters.p'
