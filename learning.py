@@ -68,14 +68,14 @@ def getpoints(clf, X, y, weight):
     e = np.sum(np.array(range(probs.shape[1])) * probs, axis=1)
     epoints = e * weight
     apoints = y * weight
-    return epoints, apoints
+    return epoints.reshape(-1, 1), apoints.reshape(-1, 1)
 
 
 def score(df, clf_goals=None, clf_assists=None, clf_shots=None, clf_blocks=None):
     timestamps = list(set(list(df['DateTimestamp'])))
     diff = []
 
-    for time in tqdm(timestamps):
+    for time in timestamps:
         df_day = df[df.DateTimestamp == time]
 
         df_day, X_goals, y_goals = prepare_base_data(df_day, "Goals")
@@ -90,7 +90,7 @@ def score(df, clf_goals=None, clf_assists=None, clf_shots=None, clf_blocks=None)
         Xs = [X_goals, X_assists, X_shots, X_blocks]
         ys = [y_goals, y_assists, y_shots, y_blocks]
 
-        for clf, X, y, weight in zip(clfs, Xs, ys, WEIGHT):
+        for clf, X, y, weight in zip(clfs, Xs, ys, WEIGHTS):
             if(clf):
                 epoints, apoints = getpoints(clf, X, y, weight)
                 expected += epoints
@@ -106,6 +106,6 @@ def score(df, clf_goals=None, clf_assists=None, clf_shots=None, clf_blocks=None)
         pred = df_our_rank.iloc[0:top].sum()['Actual']
         diff.append(pred - true)
 
-    abse = np.abs(np.array(diff)) / len(diff)
+    abse = np.sum(np.abs(np.array(diff))) / len(diff)
 
     return abse

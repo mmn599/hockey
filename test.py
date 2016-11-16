@@ -42,6 +42,6 @@ classifiers = [
 # iterate over classifiers
 for name, clf in zip(names, classifiers):
     clf.fit(Xtrain, ytrain)
-    score = learning.score(dftest, clf)
+    score = learning.score(dftest, clf_goals=clf)
     print(name)
     print(score)
