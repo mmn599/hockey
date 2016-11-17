@@ -31,7 +31,7 @@ def get_base_data(seasons):
     return df
 
 
-def prepare_base_data(df, output, dropcols=MISC_COLS, scale=True):
+def prepare_base_data(df, output, dropcols=MISC_COLS, scale=True, ft=None):
     df = clean_data(df)
 
     outputs = [x for x in df.columns.values if 'O_' in x]    
@@ -40,6 +40,9 @@ def prepare_base_data(df, output, dropcols=MISC_COLS, scale=True):
 
     if(scale):
         X = scale_data(X)
+
+    if(ft):
+        X = ft.transform(X)
 
     if(output == "Goals"):
         y = df['O_Goals']
@@ -78,8 +81,9 @@ def getpoints(df):
     ret['O_FPoints'] = (ret[ocols] * WEIGHTS).sum(axis=1)
     return ret
 
+DEFAULTFEATURES = {"Goals": None, "Assists": None, "Shots": None, "Blocks": None}
 
-def score(df, modelsd, softmax=None):
+def score(df, modelsd, featuresd=DEFAULTFEATURES, softmax=None):
     timestamps = list(set(list(df['DateTimestamp'])))
     diff = []
     trues = []
@@ -88,10 +92,15 @@ def score(df, modelsd, softmax=None):
     for time in timestamps:
         df_day = df[df.DateTimestamp == time]
 
-        df_day, X_goals, y_goals = prepare_base_data(df_day, "Goals")
-        df_day, X_assists, y_assists = prepare_base_data(df_day, "Assists")
-        df_day, X_shots, y_shots = prepare_base_data(df_day, "Shots")
-        df_day, X_blocks, y_blocks = prepare_base_data(df_day, "Blocks")
+        gselect = featuresd.get("Goals")
+        aselect = featuresd.get("Assists")
+        sselect = featuresd.get("Shots")
+        bselect = featuresd.get("Blocks")
+
+        df_day, X_goals, y_goals = prepare_base_data(df_day, "Goals", ft=gselect)
+        df_day, X_assists, y_assists = prepare_base_data(df_day, "Assists", ft=aselect)
+        df_day, X_shots, y_shots = prepare_base_data(df_day, "Shots", ft=sselect)
+        df_day, X_blocks, y_blocks = prepare_base_data(df_day, "Blocks", ft=bselect)
 
         expected = np.zeros((len(df_day), 1))
         actual = np.zeros((len(df_day), 1))
@@ -106,6 +115,9 @@ def score(df, modelsd, softmax=None):
         i = 0
         for model, X, y, weight in zip(models, Xs, ys, WEIGHTS):
             if(model):
+                print(model)
+                print(X.shape)
+                print(y.shape)
                 epoints, apoints = getexppoints(model, X, y, weight)
                 exps[:, i] = epoints.T
                 expected += epoints
