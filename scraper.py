@@ -194,7 +194,6 @@ def scrape_all_playergame_csvs(season, games):
 # Constants
 DIR_SKATERS = "Skaters/"
 DIR_GOALIES = "Goalies/"
-FILE_GAMES = "2015Games.csv"
 PLAYER_STATS_FILE = "PlayerStats"
 ADV_FILE = "ADV"
 HOME = "Home"
@@ -207,39 +206,39 @@ SEASON_URLS = {
     2014: "http://www.hockey-reference.com/leagues/NHL_2015_games.html"}
 
 
-def get_season_dir(season=2015):
+def get_season_dir(season):
     return DATA_DIR + str(season) + "/"
 
 
-def get_skater_dir(season=2015):
+def get_skater_dir(season):
     return get_season_dir(season) + DIR_SKATERS
 
 
-def get_goalie_dir(season=2015):
+def get_goalie_dir(season):
     return get_season_dir(season) + DIR_GOALIES
 
 
-def get_overallgames_filename(season=2015):
+def get_overallgames_filename(season):
     return get_season_dir(season) + str(season) + "Games.csv"
 
 
-def get_all_skater_csvs(season=2015):
+def get_all_skater_csvs(season):
     return glob.glob(get_skater_dir(season) + "*.csv")
 
 
-def get_all_goalie_csvs(season=2015):
+def get_all_goalie_csvs(season):
     return glob.glob(get_goalie_dir(season) + "*.csv")
 
 
-def get_p_skatergames_filename(season=2015):
+def get_p_skatergames_filename(season):
     return get_season_dir(season) + "SkaterGames.p"
 
 
-def get_p_goaliegames_filename(season=2015):
+def get_p_goaliegames_filename(season):
     return get_season_dir(season) + "GoalieGames.p"
 
 
-def get_p_overallgames_filename(season=2015):
+def get_p_overallgames_filename(season):
     return get_season_dir(season) + "OverallGames.p"
 
 
@@ -261,7 +260,7 @@ def get_adv_csvname(season, gamename, home):
 
 def get_raw_overallgames_df(season):
 
-    p_overallgames = get_p_overallgames_filename(2015)
+    p_overallgames = get_p_overallgames_filename(season)
 
     if(os.path.isfile(p_overallgames)):
         return joblib.load(p_overallgames)
@@ -352,13 +351,7 @@ def get_raw_skatergames_df(season):
     return df
 
 
-def scrape_pgs(season):
-    d_overallgames = get_raw_overallgames_df(season)
-    d_somegames = d_overallgames[d_overallgames.GameNum > 988]
-    scrape_all_playergame_csvs(season, d_somegames)
-
-
-def scrape_season(season=2015):
+def scrape_season(season):
     dir_season = get_season_dir(season)
     dir_goalies = get_goalie_dir(season)
     dir_skaters = get_skater_dir(season)

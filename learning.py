@@ -1,16 +1,11 @@
 import pandas as pd
 from sklearn.externals import joblib
-from sklearn.model_selection import cross_val_score
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import roc_curve
-from matplotlib import pyplot as plt
 from sklearn.preprocessing import StandardScaler 
 import numpy as np
-from tqdm import tqdm
 
 MISC_COLS = ['GameNum', 'GameName', 'Player', 'DateTimestamp', 'Num', 'GNum']
 
-def clean_data(df, nthresh=20, gthresh=10, misccols=MISC_COLS):
+def clean_data(df, nthresh=30, gthresh=20, misccols=MISC_COLS):
     df = df[df.Num >= nthresh]
     df = df[df.GNum >= gthresh]
     df = df.fillna(0)
@@ -36,14 +31,15 @@ def get_base_data(seasons):
     return df
 
 
-def prepare_base_data(df, output, dropcols=MISC_COLS):
+def prepare_base_data(df, output, dropcols=MISC_COLS, scale=True):
     df = clean_data(df)
 
     outputs = [x for x in df.columns.values if 'O_' in x]    
     X = df.drop(outputs, 1)
     X = X.drop(dropcols, 1)
 
-    X = scale_data(X)
+    if(scale):
+        X = scale_data(X)
 
     if(output == "Goals"):
         y = df['O_Goals']
@@ -53,6 +49,8 @@ def prepare_base_data(df, output, dropcols=MISC_COLS):
         y = df['O_Shots']
     elif(output == "Blocks"):
         y = df['O_Blocks']
+    elif(output == "FPoints"):
+        y = df['O_FPoints']
     else:
         raise Exception('Fuck you')
 
@@ -60,20 +58,32 @@ def prepare_base_data(df, output, dropcols=MISC_COLS):
 
 # goals, assists, shots, blocks
 WEIGHTS = np.array([3, 2, .5, .5])
-OCOLS =  ["O_Goals", "O_Assists", "O_Shots", "O_Blocks"]
-
-
-def getpoints(clf, X, y, weight):
-    probs = clf.predict_proba(X)
-    e = np.sum(np.array(range(probs.shape[1])) * probs, axis=1)
-    epoints = e * weight
+ 
+def getexppoints(model, X, y, weight):
+    prob = getattr(model, "predict_prob", None)
+    if prob and callable(prob):
+        probs = model.predict_proba(X)
+        ypred = np.sum(np.array(range(probs.shape[1])) * probs, axis=1)
+    else:
+        ypred = model.predict(X)
+    # e = np.sum(np.array(range(probs.shape[1])) * probs, axis=1)
+    epoints = ypred * weight
     apoints = y * weight
     return epoints.reshape(-1, 1), apoints.reshape(-1, 1)
 
 
-def score(df, clf_goals=None, clf_assists=None, clf_shots=None, clf_blocks=None):
+def getpoints(df):
+    ret = df.copy()
+    ocols = [x for x in df.columns.values if 'O_' in x]    
+    ret['O_FPoints'] = (ret[ocols] * WEIGHTS).sum(axis=1)
+    return ret
+
+
+def score(df, modelsd, softmax=None):
     timestamps = list(set(list(df['DateTimestamp'])))
     diff = []
+    trues = []
+    preds = []
 
     for time in timestamps:
         df_day = df[df.DateTimestamp == time]
@@ -86,26 +96,36 @@ def score(df, clf_goals=None, clf_assists=None, clf_shots=None, clf_blocks=None)
         expected = np.zeros((len(df_day), 1))
         actual = np.zeros((len(df_day), 1))
 
-        clfs = [clf_goals, clf_assists, clf_shots, clf_blocks]
+        models = [modelsd.get("Goals"), modelsd.get("Assists"), 
+                  modelsd.get("Shots"), modelsd.get("Blocks")]
         Xs = [X_goals, X_assists, X_shots, X_blocks]
         ys = [y_goals, y_assists, y_shots, y_blocks]
 
-        for clf, X, y, weight in zip(clfs, Xs, ys, WEIGHTS):
-            if(clf):
-                epoints, apoints = getpoints(clf, X, y, weight)
+        exps = np.zeros((len(df_day), 4))
+
+        i = 0
+        for model, X, y, weight in zip(models, Xs, ys, WEIGHTS):
+            if(model):
+                epoints, apoints = getexppoints(model, X, y, weight)
+                exps[:, i] = epoints.T
                 expected += epoints
                 actual += apoints
 
-        df_day['Expected'] = expected
         df_day['Actual'] = actual
+        if(softmax):
+            df_day['Expected'] = softmax.predict(exps)
+        else:
+            df_day['Expected'] = expected
 
         df_true_rank = df_day.sort_values('Actual', ascending=False)
         df_our_rank = df_day.sort_values('Expected', ascending=False)
         top = 10
         true = df_true_rank.iloc[0:top].sum()['Actual']
         pred = df_our_rank.iloc[0:top].sum()['Actual']
+        trues.append(true)
+        preds.append(pred)
         diff.append(pred - true)
 
     abse = np.sum(np.abs(np.array(diff))) / len(diff)
 
-    return abse
+    return trues, preds, abse
