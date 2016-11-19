@@ -115,9 +115,6 @@ def score(df, modelsd, featuresd=DEFAULTFEATURES, softmax=None):
         i = 0
         for model, X, y, weight in zip(models, Xs, ys, WEIGHTS):
             if(model):
-                print(model)
-                print(X.shape)
-                print(y.shape)
                 epoints, apoints = getexppoints(model, X, y, weight)
                 exps[:, i] = epoints.T
                 expected += epoints
