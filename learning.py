@@ -53,6 +53,9 @@ def prepare_base_data(df, output, dropcols=MISC_COLS, scale=True, ft=None):
     elif(output == "Blocks"):
         y = df['O_Blocks']
     elif(output == "FPoints"):
+        dfoutputs = df[["O_Goals", "O_Assists", "O_Shots", "O_Blocks"]].copy()
+        dfoutputs = [3, 2, .5, .5] * dfoutputs
+        df['O_FPoints'] = dfoutputs.sum(axis=1)
         y = df['O_FPoints']
     else:
         raise Exception('Fuck you')
@@ -61,6 +64,7 @@ def prepare_base_data(df, output, dropcols=MISC_COLS, scale=True, ft=None):
 
 # goals, assists, shots, blocks
 WEIGHTS = np.array([3, 2, .5, .5])
+OUTPUTS = ["O_Goals", "O_Assists", "O_Shots", "O_Blocks"]
  
 def getexppoints(model, X, y, weight):
     prob = getattr(model, "predict_prob", None)
@@ -82,6 +86,8 @@ def getpoints(df):
     return ret
 
 DEFAULTFEATURES = {"Goals": None, "Assists": None, "Shots": None, "Blocks": None}
+
+
 
 def score(df, modelsd, featuresd=DEFAULTFEATURES, softmax=None):
     timestamps = list(set(list(df['DateTimestamp'])))
@@ -137,4 +143,37 @@ def score(df, modelsd, featuresd=DEFAULTFEATURES, softmax=None):
 
     abse = np.sum(np.abs(np.array(diff))) / len(diff)
 
+    return trues, preds, abse
+
+
+def score_overall(df, model, ft=None):
+    timestamps = list(set(list(df['DateTimestamp'])))
+    diff = []
+    trues = []
+    preds = []
+
+    for time in timestamps:
+        df_day = df[df.DateTimestamp == time]
+        df_day, X, y = prepare_base_data(df_day, "FPoints", ft=ft)
+
+        expected = np.zeros((len(df_day), 1))
+        actual = np.zeros((len(df_day), 1))
+
+        ypred = model.predict(X)
+        expected += np.expand_dims(ypred, axis=1)
+        actual += np.expand_dims(y, axis=1)
+
+        df_day['Actual'] = actual
+        df_day['Expected'] = expected
+
+        df_true_rank = df_day.sort_values('Actual', ascending=False)
+        df_our_rank = df_day.sort_values('Expected', ascending=False)
+        top = 10
+        true = df_true_rank.iloc[0:top].sum()['Actual']
+        pred = df_our_rank.iloc[0:top].sum()['Actual']
+        trues.append(true)
+        preds.append(pred)
+        diff.append(pred - true)
+
+    abse = np.sum(np.abs(np.array(diff))) / len(diff)
     return trues, preds, abse
